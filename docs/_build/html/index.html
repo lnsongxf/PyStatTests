@@ -1,0 +1,308 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>PyStat documentation &mdash; PyStat 0.1.1a documentation</title>
+    
+    <link rel="stylesheet" href="_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '0.1.1a',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="shortcut icon" href="_static/fractalLogo.png"/>
+    <link rel="top" title="PyStat 0.1.1a documentation" href="#" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="#">PyStat Documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="pystat-documentation">
+<h1>PyStat documentation<a class="headerlink" href="#pystat-documentation" title="Permalink to this headline">¶</a></h1>
+<div class="toctree-wrapper compound">
+<ul class="simple">
+</ul>
+</div>
+</div>
+<div class="section" id="introduction">
+<h1>Introduction<a class="headerlink" href="#introduction" title="Permalink to this headline">¶</a></h1>
+<p>This package contains commonly used statistical routines implemented in Python.
+The functionality is organized in 2 broad categories:</p>
+<ul class="simple">
+<li>Estimation routines</li>
+<li>Testing routines</li>
+</ul>
+<p>The classical, mostly parametric tests implemented in this package are taken from the</p>
+</div>
+<div class="section" id="module-tests.tests">
+<span id="statistical-tests"></span><h1>Statistical Tests<a class="headerlink" href="#module-tests.tests" title="Permalink to this headline">¶</a></h1>
+<dl class="function">
+<dt id="tests.tests.test_correlation">
+<tt class="descclassname">tests.tests.</tt><tt class="descname">test_correlation</tt><big>(</big><em>series1</em>, <em>series2</em>, <em>correlation</em>, <em>test_type='z'</em><big>)</big><a class="reference internal" href="_modules/tests/tests.html#test_correlation"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#tests.tests.test_correlation" title="Permalink to this definition">¶</a></dt>
+<dd><p>Test population correlation is equal to a given value
+if the correlation passed is zero, then a t-test is called
+else, a z-test is called. Actually it is possible to also compute the
+z-test when the hypothesised population correlation is zero.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Param:</th><td class="field-body">series1, series2: the pandas series whose correlation has to be computed</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">the test statistic, the p-value, the degrees of freedom, and the type of the test</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="tests.tests.test_mean">
+<tt class="descclassname">tests.tests.</tt><tt class="descname">test_mean</tt><big>(</big><em>series</em>, <em>mean</em>, <em>variance=None</em>, <em>type='two-sided'</em><big>)</big><a class="reference internal" href="_modules/tests/tests.html#test_mean"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#tests.tests.test_mean" title="Permalink to this definition">¶</a></dt>
+<dd><p>Test that the mean of the series is equal to given number.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Param:</th><td class="field-body">series: a pandas Series</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Param:</th><td class="field-body">mean: the hypothesised true mean of the population</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Param:</th><td class="field-body">variance: if supplied, the known variance of the population</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">a dict with the statistic and the p-value</td>
+</tr>
+</tbody>
+</table>
+<p>This module implements two tests of population mean &#8211; one where the 
+population variance is assumed to be known, and the other where the
+population variance is assumed to be unknown.</p>
+<p>^ Test: Z-test for population mean (variance known)</p>
+<p><strong>Data:</strong> The data is assumed to be a random (IID) sample from a normal population <a class="footnote-reference" href="#f1" id="id1">[1]</a>.</p>
+<p><strong>Hypothesis</strong>:</p>
+<div class="math">
+\[\begin{split}H_0: \mu = \mu_0 \\ 
+H_1: \mu \neq \mu_0\end{split}\]</div>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">import</span> <span class="nn">pandas</span> <span class="kn">as</span> <span class="nn">pd</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
+<span class="c"># import unittest as ut</span>
+
+<span class="kn">from</span> <span class="nn">PyStatTests.tests</span> <span class="kn">import</span> <span class="n">tests</span>
+
+<span class="c">#================================================</span>
+<span class="c"># test 1: Z-test for a population mean (variance known)</span>
+<span class="c"># test 7: t-test for population mean (variance unknown)</span>
+<span class="c">#================================================</span>
+
+<span class="k">print</span><span class="p">(</span><span class="s">&quot;==============================================================&quot;</span><span class="p">)</span>
+<span class="k">print</span><span class="p">(</span><span class="s">&quot;Tests of population mean under the null&quot;</span><span class="p">)</span>
+<span class="k">print</span><span class="p">(</span><span class="s">&quot;==============================================================&quot;</span><span class="p">)</span>
+<span class="c"># generate the univariate series</span>
+<span class="n">series1</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">randn</span><span class="p">(</span><span class="mi">10</span><span class="p">))</span>
+<span class="n">help</span><span class="p">(</span><span class="n">tests</span><span class="o">.</span><span class="n">test_means</span><span class="p">)</span>
+<span class="c"># test 1: null  DGP</span>
+<span class="k">print</span><span class="p">(</span><span class="n">tests</span><span class="o">.</span><span class="n">test_mean</span><span class="p">(</span><span class="n">series1</span><span class="p">,</span> <span class="n">mean</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="n">variance</span> <span class="o">=</span> <span class="mi">1</span><span class="p">))</span>
+<span class="c"># test 7: null DGP</span>
+<span class="k">print</span><span class="p">(</span><span class="n">tests</span><span class="o">.</span><span class="n">test_mean</span><span class="p">(</span><span class="n">series1</span><span class="p">,</span> <span class="n">mean</span> <span class="o">=</span> <span class="mi">0</span><span class="p">))</span>
+
+<span class="k">print</span><span class="p">(</span><span class="s">&quot;==============================================================&quot;</span><span class="p">)</span>
+<span class="k">print</span><span class="p">(</span><span class="s">&quot;Tests of population mean under the alternative&quot;</span><span class="p">)</span>
+<span class="k">print</span><span class="p">(</span><span class="s">&quot;==============================================================&quot;</span><span class="p">)</span>
+<span class="c"># test 1: alternative DGP</span>
+<span class="k">print</span><span class="p">(</span><span class="n">tests</span><span class="o">.</span><span class="n">test_mean</span><span class="p">(</span><span class="n">series1</span><span class="p">,</span> <span class="n">mean</span> <span class="o">=</span> <span class="mi">2</span><span class="p">,</span> <span class="n">variance</span> <span class="o">=</span> <span class="mi">1</span><span class="p">))</span>
+<span class="c"># test 7: alternative DGP</span>
+<span class="k">print</span><span class="p">(</span><span class="n">tests</span><span class="o">.</span><span class="n">test_mean</span><span class="p">(</span><span class="n">series1</span><span class="p">,</span> <span class="n">mean</span> <span class="o">=</span> <span class="mi">2</span><span class="p">))</span>
+</pre></div>
+</div>
+<p class="rubric">Footnotes</p>
+<table class="docutils footnote" frame="void" id="f1" rules="none">
+<colgroup><col class="label" /><col /></colgroup>
+<tbody valign="top">
+<tr><td class="label"><a class="fn-backref" href="#id1">[1]</a></td><td>Note that the distribution of the statistic might be robust to other
+kinds of populations and sampling schemes but we discuss only the cases in <a class="reference internal" href="#kanji98" id="id2">[kanji98]</a>.</td></tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="tests.tests.test_means">
+<tt class="descclassname">tests.tests.</tt><tt class="descname">test_means</tt><big>(</big><em>series1</em>, <em>series2</em>, <em>variance1=None</em>, <em>variance2=None</em>, <em>var_equal=False</em>, <em>var_unknown=False</em>, <em>type='two-sided'</em><big>)</big><a class="reference internal" href="_modules/tests/tests.html#test_means"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#tests.tests.test_means" title="Permalink to this definition">¶</a></dt>
+<dd><p>Test whether two population means are different</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Param:</th><td class="field-body">series1, series 2: two pandas series from the two populations to be compared</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Param:</th><td class="field-body">variance1, variance2: if supplied, the known variances of the populations</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Param:</th><td class="field-body">var_equal: flag for if the two variances are equal</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Param:</th><td class="field-body">var_unknown: flag for whether the variances are unknown</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Param:</th><td class="field-body">type: whether to computer a two-sided, upper or lower tailed test</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">a dict with the statistic, the p-value and the degrees of freedom of the test</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="tests.tests.test_proportion">
+<tt class="descclassname">tests.tests.</tt><tt class="descname">test_proportion</tt><big>(</big><em>series</em>, <em>proportion</em><big>)</big><a class="reference internal" href="_modules/tests/tests.html#test_proportion"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#tests.tests.test_proportion" title="Permalink to this definition">¶</a></dt>
+<dd><p>Test whether the population proportion is equal to a given value</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Param:</th><td class="field-body">series: sample of data from a population</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Param:</th><td class="field-body">proportion: hypothesised proportion of the binomial population</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">a dict containing the test statistic and the p-value of the test</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="tests.tests.test_proportions">
+<tt class="descclassname">tests.tests.</tt><tt class="descname">test_proportions</tt><big>(</big><em>series1</em>, <em>series2</em><big>)</big><a class="reference internal" href="_modules/tests/tests.html#test_proportions"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#tests.tests.test_proportions" title="Permalink to this definition">¶</a></dt>
+<dd><p>Test the significance of the difference between two proportions</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Param:</th><td class="field-body">series1, series2: pandas series from which the proportion is to be computed</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">a dict with the statistic and the p-value</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="tests.tests.test_variance">
+<tt class="descclassname">tests.tests.</tt><tt class="descname">test_variance</tt><big>(</big><em>series</em>, <em>variance</em><big>)</big><a class="reference internal" href="_modules/tests/tests.html#test_variance"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#tests.tests.test_variance" title="Permalink to this definition">¶</a></dt>
+<dd><p>Test whether the population variance is equal to a given value</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Param:</th><td class="field-body">series: sample of data from a population</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Param:</th><td class="field-body">variance: hypothesised variance of the population</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">a dict containing the statistic, p-value and the degrees of freedom of the test</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
+<div class="section" id="indices-and-tables">
+<h1>Indices and tables<a class="headerlink" href="#indices-and-tables" title="Permalink to this headline">¶</a></h1>
+<ul class="simple">
+<li><a class="reference internal" href="genindex.html"><em>Index</em></a></li>
+<li><a class="reference internal" href="py-modindex.html"><em>Module Index</em></a></li>
+<li><a class="reference internal" href="search.html"><em>Search Page</em></a></li>
+</ul>
+</div>
+<div class="section" id="bibliography">
+<h1>Bibliography<a class="headerlink" href="#bibliography" title="Permalink to this headline">¶</a></h1>
+<table class="docutils citation" frame="void" id="kanji98" rules="none">
+<colgroup><col class="label" /><col /></colgroup>
+<tbody valign="top">
+<tr><td class="label"><a class="fn-backref" href="#id2">[kanji98]</a></td><td>Kanji, Gopal K. 100 statistical tests. Sage, 2006.</td></tr>
+</tbody>
+</table>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+            <p class="logo"><a href="#">
+              <img class="logo" src="_static/fractalLogo.png" alt="Logo"/>
+            </a></p>
+  <h3><a href="#">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">PyStat documentation</a></li>
+<li><a class="reference internal" href="#introduction">Introduction</a></li>
+<li><a class="reference internal" href="#module-tests.tests">Statistical Tests</a></li>
+<li><a class="reference internal" href="#indices-and-tables">Indices and tables</a></li>
+<li><a class="reference internal" href="#bibliography">Bibliography</a></li>
+</ul>
+
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="_sources/index.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="#">PyStat Documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2014, Tirthankar Chakravarty.
+      Last updated on Jul 29, 2014.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.2.
+    </div>
+  </body>
+</html>

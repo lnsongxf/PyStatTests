@@ -1,0 +1,367 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>tests.tests &mdash; PyStat 0.1.1a documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '0.1.1a',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="shortcut icon" href="../../_static/fractalLogo.png"/>
+    <link rel="top" title="PyStat 0.1.1a documentation" href="../../index.html" />
+    <link rel="up" title="Module code" href="../index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../index.html">PyStat Documentation</a> &raquo;</li>
+          <li><a href="../index.html" accesskey="U">Module code</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <h1>Source code for tests.tests</h1><div class="highlight"><pre>
+<span class="c">#====================================================================</span>
+<span class="c"># purpose: implementation of statistical tests in Python</span>
+<span class="c"># author: tirthankar chakravarty</span>
+<span class="c"># created: 2nd June 2014</span>
+<span class="c"># revised: </span>
+<span class="c"># comments:</span>
+<span class="c"># 1. Make the one sample and two sample comparisons special cases of the </span>
+<span class="c">#     K sample comparisons.</span>
+<span class="c">#    It seems to be simple to include one-sample as a special case of </span>
+<span class="c">#     two-sample by checking if the second series is missing</span>
+<span class="c">#    Should be possible to specify *args as positional arguments that are </span>
+<span class="c">#     the series that are to be compared.</span>
+<span class="c">#     TC: really need to see how comparable the forms of the K-sample and the </span>
+<span class="c">#     2-sample tests are to make this decision</span>
+<span class="c"># 2. Make it possible to specify one-sided tests in all cases</span>
+<span class="c">#====================================================================</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">scipy.stats</span> <span class="kn">as</span> <span class="nn">sps</span>
+<span class="kn">import</span> <span class="nn">warnings</span>
+
+<span class="c"># FIXME check that this is portable</span>
+<span class="c"># NOTE this does not get fixed when the name of the module is fixed</span>
+<span class="kn">from</span> <span class="nn">.error_definitions</span> <span class="kn">import</span> <span class="n">NotEqualLengthError</span>
+
+<div class="viewcode-block" id="test_mean"><a class="viewcode-back" href="../../index.html#tests.tests.test_mean">[docs]</a><span class="k">def</span> <span class="nf">test_mean</span><span class="p">(</span><span class="n">series</span><span class="p">,</span> <span class="n">mean</span><span class="p">,</span> <span class="n">variance</span> <span class="o">=</span> <span class="bp">None</span><span class="p">,</span> <span class="nb">type</span> <span class="o">=</span> <span class="s">&#39;two-sided&#39;</span><span class="p">):</span>
+    <span class="sd">r&quot;&quot;&quot; Test that the mean of the series is equal to given number.</span>
+
+<span class="sd">    :param: series: a pandas Series</span>
+<span class="sd">    :param: mean: the hypothesised true mean of the population</span>
+<span class="sd">    :param: variance: if supplied, the known variance of the population</span>
+<span class="sd">    </span>
+<span class="sd">    :returns: a dict with the statistic and the p-value</span>
+<span class="sd">    </span>
+<span class="sd">    This module implements two tests of population mean -- one where the </span>
+<span class="sd">    population variance is assumed to be known, and the other where the</span>
+<span class="sd">    population variance is assumed to be unknown.</span>
+<span class="sd">    </span>
+<span class="sd">    ^ Test: Z-test for population mean (variance known)</span>
+<span class="sd">    </span>
+<span class="sd">    **Data:** The data is assumed to be a random (IID) sample from a normal population [#f1]_. </span>
+<span class="sd">    </span>
+<span class="sd">    **Hypothesis**: </span>
+<span class="sd">    </span>
+<span class="sd">    .. math::</span>
+<span class="sd">    </span>
+<span class="sd">        H_0: \mu = \mu_0 \\ </span>
+<span class="sd">        H_1: \mu \neq \mu_0</span>
+<span class="sd">    </span>
+<span class="sd">    .. code-block:: python</span>
+<span class="sd">        </span>
+<span class="sd">        import pandas as pd</span>
+<span class="sd">        import numpy as np</span>
+<span class="sd">        # import unittest as ut</span>
+<span class="sd">        </span>
+<span class="sd">        from PyStatTests.tests import tests</span>
+<span class="sd">        </span>
+<span class="sd">        #================================================</span>
+<span class="sd">        # test 1: Z-test for a population mean (variance known)</span>
+<span class="sd">        # test 7: t-test for population mean (variance unknown)</span>
+<span class="sd">        #================================================</span>
+
+<span class="sd">        print(&quot;==============================================================&quot;)</span>
+<span class="sd">        print(&quot;Tests of population mean under the null&quot;)</span>
+<span class="sd">        print(&quot;==============================================================&quot;)</span>
+<span class="sd">        # generate the univariate series</span>
+<span class="sd">        series1 = pd.Series(np.random.randn(10))</span>
+<span class="sd">        help(tests.test_means)</span>
+<span class="sd">        # test 1: null  DGP</span>
+<span class="sd">        print(tests.test_mean(series1, mean = 0, variance = 1))</span>
+<span class="sd">        # test 7: null DGP</span>
+<span class="sd">        print(tests.test_mean(series1, mean = 0))</span>
+<span class="sd">        </span>
+<span class="sd">        print(&quot;==============================================================&quot;)</span>
+<span class="sd">        print(&quot;Tests of population mean under the alternative&quot;)</span>
+<span class="sd">        print(&quot;==============================================================&quot;)</span>
+<span class="sd">        # test 1: alternative DGP</span>
+<span class="sd">        print(tests.test_mean(series1, mean = 2, variance = 1))</span>
+<span class="sd">        # test 7: alternative DGP</span>
+<span class="sd">        print(tests.test_mean(series1, mean = 2))</span>
+
+<span class="sd">    .. rubric:: Footnotes</span>
+<span class="sd">    </span>
+<span class="sd">    .. [#f1] Note that the distribution of the statistic might be robust to other</span>
+<span class="sd">      kinds of populations and sampling schemes but we discuss only the cases in [kanji98]_.</span>
+<span class="sd">      </span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">seriesMean</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">series</span><span class="p">)</span>
+    <span class="n">N</span> <span class="o">=</span> <span class="n">series</span><span class="o">.</span><span class="n">count</span><span class="p">()</span> 
+    <span class="k">if</span> <span class="n">variance</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span> 
+        <span class="c"># if the variance is not given, compute the variance</span>
+        <span class="c"># compute t-statistic, and compare to the t-distribution</span>
+        <span class="c"># NOTE the default variance computation does not deduct the</span>
+        <span class="c">#     the one DoF used up in the computation of the mean</span>
+        <span class="c"># http://stackoverflow.com/a/20708622/1414455</span>
+        <span class="n">variance</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">var</span><span class="p">(</span><span class="n">series</span><span class="p">,</span> <span class="n">ddof</span> <span class="o">=</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="n">statistic</span> <span class="o">=</span> <span class="p">(</span><span class="n">seriesMean</span> <span class="o">-</span> <span class="n">mean</span><span class="p">)</span><span class="o">/</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">variance</span><span class="o">/</span><span class="n">N</span><span class="p">)</span>
+        <span class="n">pvalue</span> <span class="o">=</span> <span class="mi">2</span><span class="o">*</span><span class="p">(</span><span class="mi">1</span><span class="o">-</span><span class="n">sps</span><span class="o">.</span><span class="n">t</span><span class="o">.</span><span class="n">cdf</span><span class="p">(</span><span class="nb">abs</span><span class="p">(</span><span class="n">statistic</span><span class="p">),</span> <span class="n">N</span> <span class="o">-</span> <span class="mi">1</span><span class="p">))</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="c"># if the variance is given, compute the z-statistic, and compare to </span>
+        <span class="c">#     the normal distribution</span>
+        <span class="n">statistic</span> <span class="o">=</span> <span class="p">(</span><span class="n">seriesMean</span> <span class="o">-</span> <span class="n">mean</span><span class="p">)</span><span class="o">/</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">variance</span><span class="o">/</span><span class="n">N</span><span class="p">)</span>
+        <span class="n">pvalue</span> <span class="o">=</span> <span class="mi">2</span><span class="o">*</span><span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">sps</span><span class="o">.</span><span class="n">norm</span><span class="o">.</span><span class="n">cdf</span><span class="p">(</span><span class="nb">abs</span><span class="p">(</span><span class="n">statistic</span><span class="p">)))</span>
+    
+    <span class="k">return</span><span class="p">({</span><span class="s">&#39;statistic&#39;</span><span class="p">:</span> <span class="n">statistic</span><span class="p">,</span> <span class="s">&#39;p-value&#39;</span><span class="p">:</span> <span class="n">pvalue</span><span class="p">})</span>
+    </div>
+<div class="viewcode-block" id="test_means"><a class="viewcode-back" href="../../index.html#tests.tests.test_means">[docs]</a><span class="k">def</span> <span class="nf">test_means</span><span class="p">(</span><span class="n">series1</span><span class="p">,</span> <span class="n">series2</span><span class="p">,</span>  <span class="n">variance1</span> <span class="o">=</span> <span class="bp">None</span><span class="p">,</span> <span class="n">variance2</span> <span class="o">=</span> <span class="bp">None</span><span class="p">,</span> <span class="n">var_equal</span> <span class="o">=</span> <span class="bp">False</span><span class="p">,</span> 
+          <span class="n">var_unknown</span> <span class="o">=</span> <span class="bp">False</span><span class="p">,</span> <span class="nb">type</span> <span class="o">=</span> <span class="s">&#39;two-sided&#39;</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Test whether two population means are different</span>
+<span class="sd">    </span>
+<span class="sd">    </span>
+<span class="sd">    :param: series1, series 2: two pandas series from the two populations to be compared</span>
+<span class="sd">    :param: variance1, variance2: if supplied, the known variances of the populations</span>
+<span class="sd">    :param: var_equal: flag for if the two variances are equal</span>
+<span class="sd">    :param: var_unknown: flag for whether the variances are unknown</span>
+<span class="sd">    :param: type: whether to computer a two-sided, upper or lower tailed test</span>
+<span class="sd">    </span>
+<span class="sd">    :returns: a dict with the statistic, the p-value and the degrees of freedom of the test</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">mean1</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">series1</span><span class="p">)</span>
+    <span class="n">mean2</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">series2</span><span class="p">)</span>
+    
+    <span class="n">N1</span> <span class="o">=</span> <span class="n">series1</span><span class="o">.</span><span class="n">count</span><span class="p">()</span>
+    <span class="n">N2</span> <span class="o">=</span> <span class="n">series2</span><span class="o">.</span><span class="n">count</span><span class="p">()</span>
+    <span class="n">dof</span> <span class="o">=</span> <span class="bp">None</span>
+    
+    <span class="k">if</span> <span class="bp">None</span> <span class="ow">in</span> <span class="p">(</span><span class="n">variance1</span><span class="p">,</span> <span class="n">variance2</span><span class="p">):</span>
+        <span class="n">var_unknown</span> <span class="o">=</span> <span class="bp">True</span>
+        
+        <span class="c"># NOTE if either of the variances is missing, then both are recomputed,</span>
+        <span class="n">variance1</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">var</span><span class="p">(</span><span class="n">series1</span><span class="p">,</span> <span class="n">ddof</span> <span class="o">=</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="n">variance2</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">var</span><span class="p">(</span><span class="n">series2</span><span class="p">,</span> <span class="n">ddof</span> <span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">variance1</span> <span class="o">==</span> <span class="n">variance2</span><span class="p">:</span>
+        <span class="n">var_equal</span> <span class="o">=</span> <span class="bp">True</span>
+    
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">var_unknown</span> <span class="ow">and</span> <span class="n">var_equal</span><span class="p">:</span>
+        <span class="c"># test 2: Z-test for two population means (variances known and equal)</span>
+        <span class="n">statistic</span> <span class="o">=</span> <span class="p">(</span><span class="n">mean1</span> <span class="o">-</span> <span class="n">mean2</span><span class="p">)</span><span class="o">/</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">variance1</span><span class="o">*</span><span class="p">(</span><span class="mi">1</span><span class="o">/</span><span class="n">N1</span><span class="o">+</span><span class="mi">1</span><span class="o">/</span><span class="n">N2</span><span class="p">))</span>
+        <span class="n">pvalue</span> <span class="o">=</span> <span class="mi">2</span><span class="o">*</span><span class="p">(</span><span class="mi">1</span><span class="o">-</span><span class="n">sps</span><span class="o">.</span><span class="n">norm</span><span class="o">.</span><span class="n">cdf</span><span class="p">(</span><span class="nb">abs</span><span class="p">(</span><span class="n">statistic</span><span class="p">)))</span>
+    <span class="k">elif</span> <span class="ow">not</span> <span class="n">var_unknown</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">var_equal</span><span class="p">:</span>
+        <span class="c"># test 3: Z-test for two population means (variances known and not equal)</span>
+        <span class="n">statistic</span> <span class="o">=</span> <span class="p">(</span><span class="n">mean1</span> <span class="o">-</span> <span class="n">mean2</span><span class="p">)</span><span class="o">/</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">((</span><span class="n">variance1</span><span class="o">/</span><span class="n">N1</span> <span class="o">+</span> <span class="n">variance2</span><span class="o">/</span><span class="n">N2</span><span class="p">))</span>
+        <span class="n">pvalue</span> <span class="o">=</span> <span class="mi">2</span><span class="o">*</span><span class="p">(</span><span class="mi">1</span><span class="o">-</span><span class="n">sps</span><span class="o">.</span><span class="n">norm</span><span class="o">.</span><span class="n">cdf</span><span class="p">(</span><span class="nb">abs</span><span class="p">(</span><span class="n">statistic</span><span class="p">)))</span>
+    <span class="k">elif</span> <span class="n">var_equal</span> <span class="ow">and</span> <span class="n">var_unknown</span><span class="p">:</span>
+        <span class="c"># test 8: t-test for two population means (variances unknown and equal)</span>
+        <span class="c"># compute the unified equal variance</span>
+        <span class="n">variance</span> <span class="o">=</span> <span class="p">((</span><span class="n">N1</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span><span class="o">*</span><span class="n">variance1</span> <span class="o">+</span> <span class="p">(</span><span class="n">N2</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span><span class="o">*</span><span class="n">variance2</span><span class="p">)</span><span class="o">/</span><span class="p">(</span><span class="n">N1</span> <span class="o">+</span> <span class="n">N2</span> <span class="o">-</span> <span class="mi">2</span><span class="p">)</span>
+        <span class="n">statistic</span> <span class="o">=</span> <span class="p">(</span><span class="n">mean1</span> <span class="o">-</span> <span class="n">mean2</span><span class="p">)</span><span class="o">/</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">variance</span><span class="o">*</span><span class="p">(</span><span class="mi">1</span><span class="o">/</span><span class="n">N1</span><span class="o">+</span><span class="mi">1</span><span class="o">/</span><span class="n">N2</span><span class="p">))</span>
+        <span class="n">dof</span> <span class="o">=</span> <span class="n">N1</span> <span class="o">+</span> <span class="n">N2</span> <span class="o">-</span> <span class="mi">2</span>
+        <span class="n">pvalue</span> <span class="o">=</span> <span class="mi">2</span><span class="o">*</span><span class="p">(</span><span class="mi">1</span><span class="o">-</span><span class="n">sps</span><span class="o">.</span><span class="n">t</span><span class="o">.</span><span class="n">cdf</span><span class="p">(</span><span class="nb">abs</span><span class="p">(</span><span class="n">statistic</span><span class="p">),</span> <span class="n">dof</span><span class="p">))</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="c"># test 9: t-test for two population means (variances unknown and not equal)</span>
+        <span class="c"># note that this is the most general case where the variances are not</span>
+        <span class="c">#    known, and the variances are not assumed to be equal. This should</span>
+        <span class="c">#    be the sink case.</span>
+        <span class="n">statistic</span> <span class="o">=</span> <span class="p">(</span><span class="n">mean1</span> <span class="o">-</span> <span class="n">mean2</span><span class="p">)</span><span class="o">/</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">((</span><span class="n">variance1</span><span class="o">/</span><span class="n">N1</span> <span class="o">+</span> <span class="n">variance2</span><span class="o">/</span><span class="n">N2</span><span class="p">))</span>
+        <span class="n">dof</span> <span class="o">=</span> <span class="p">((</span><span class="n">variance1</span><span class="o">/</span><span class="n">N1</span> <span class="o">+</span> <span class="n">variance2</span><span class="o">/</span><span class="n">N2</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span><span class="o">/</span><span class="p">(</span><span class="n">variance1</span><span class="o">**</span><span class="mi">2</span><span class="o">/</span><span class="p">(</span><span class="n">N1</span><span class="o">**</span><span class="mi">2</span> <span class="o">*</span> <span class="p">(</span><span class="n">N1</span><span class="o">-</span><span class="mi">1</span><span class="p">))</span> <span class="o">+</span> <span class="n">variance2</span><span class="o">**</span><span class="mi">2</span><span class="o">/</span><span class="p">(</span><span class="n">N2</span><span class="o">**</span><span class="mi">2</span> <span class="o">*</span> <span class="p">(</span><span class="n">N2</span><span class="o">-</span><span class="mi">1</span><span class="p">))))</span>
+        <span class="n">pvalue</span> <span class="o">=</span> <span class="mi">2</span><span class="o">*</span><span class="p">(</span><span class="mi">1</span><span class="o">-</span><span class="n">sps</span><span class="o">.</span><span class="n">t</span><span class="o">.</span><span class="n">cdf</span><span class="p">(</span><span class="nb">abs</span><span class="p">(</span><span class="n">statistic</span><span class="p">),</span> <span class="n">dof</span><span class="p">))</span>
+    
+    <span class="k">return</span><span class="p">({</span><span class="s">&#39;statistic&#39;</span><span class="p">:</span> <span class="n">statistic</span><span class="p">,</span> <span class="s">&#39;p-value&#39;</span><span class="p">:</span> <span class="n">pvalue</span><span class="p">,</span> <span class="s">&#39;DoF&#39;</span><span class="p">:</span> <span class="n">dof</span><span class="p">})</span>
+</div>
+<div class="viewcode-block" id="test_variance"><a class="viewcode-back" href="../../index.html#tests.tests.test_variance">[docs]</a><span class="k">def</span> <span class="nf">test_variance</span><span class="p">(</span><span class="n">series</span><span class="p">,</span> <span class="n">variance</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Test whether the population variance is equal to a given value</span>
+<span class="sd">    </span>
+<span class="sd">    :param: series: sample of data from a population</span>
+<span class="sd">    :param: variance: hypothesised variance of the population</span>
+<span class="sd">    </span>
+<span class="sd">    :returns: a dict containing the statistic, p-value and the degrees of freedom of the test</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">sample_variance</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">var</span><span class="p">(</span><span class="n">series</span><span class="p">,</span> <span class="n">ddof</span> <span class="o">=</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="n">N</span> <span class="o">=</span> <span class="n">series</span><span class="o">.</span><span class="n">count</span><span class="p">()</span>
+    <span class="n">statistic</span> <span class="o">=</span> <span class="p">(</span><span class="n">N</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span><span class="o">*</span><span class="p">(</span><span class="n">sample_variance</span><span class="o">/</span><span class="n">variance</span><span class="p">)</span>
+    <span class="n">dof</span> <span class="o">=</span> <span class="n">N</span> <span class="o">-</span> <span class="mi">1</span>
+    <span class="n">pvalue</span> <span class="o">=</span> <span class="mi">1</span><span class="o">-</span><span class="n">sps</span><span class="o">.</span><span class="n">chi2</span><span class="o">.</span><span class="n">cdf</span><span class="p">(</span><span class="n">statistic</span><span class="p">,</span> <span class="n">dof</span><span class="p">)</span> 
+    <span class="k">return</span><span class="p">({</span><span class="s">&#39;statistic&#39;</span><span class="p">:</span> <span class="n">statistic</span><span class="p">,</span> <span class="s">&#39;p-value&#39;</span><span class="p">:</span> <span class="n">pvalue</span><span class="p">,</span>
+             <span class="s">&#39;DoF&#39;</span><span class="p">:</span> <span class="n">dof</span><span class="p">})</span>
+    </div>
+<div class="viewcode-block" id="test_proportion"><a class="viewcode-back" href="../../index.html#tests.tests.test_proportion">[docs]</a><span class="k">def</span> <span class="nf">test_proportion</span><span class="p">(</span><span class="n">series</span><span class="p">,</span> <span class="n">proportion</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Test whether the population proportion is equal to a given value</span>
+<span class="sd">    </span>
+<span class="sd">    :param: series: sample of data from a population</span>
+<span class="sd">    :param: proportion: hypothesised proportion of the binomial population</span>
+<span class="sd">    </span>
+<span class="sd">    :returns: a dict containing the test statistic and the p-value of the test</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">N</span> <span class="o">=</span> <span class="n">series</span><span class="o">.</span><span class="n">count</span><span class="p">()</span>
+    <span class="n">sample_proportion</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">series</span><span class="p">)</span>
+    <span class="n">statistic</span> <span class="o">=</span> <span class="p">((</span><span class="nb">abs</span><span class="p">(</span><span class="n">proportion</span> <span class="o">-</span> <span class="n">sample_proportion</span><span class="p">)</span> <span class="o">-</span> <span class="mf">0.5</span><span class="o">/</span><span class="n">N</span><span class="p">)</span><span class="o">/</span>
+                 <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">proportion</span><span class="o">*</span><span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">proportion</span><span class="p">)</span><span class="o">/</span><span class="n">N</span><span class="p">))</span>
+    <span class="n">pvalue</span> <span class="o">=</span> <span class="mi">2</span><span class="o">*</span><span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">sps</span><span class="o">.</span><span class="n">norm</span><span class="o">.</span><span class="n">cdf</span><span class="p">(</span><span class="n">statistic</span><span class="p">))</span>
+    <span class="k">return</span><span class="p">({</span><span class="s">&#39;statistic&#39;</span><span class="p">:</span> <span class="n">statistic</span><span class="p">,</span> <span class="s">&#39;p-value&#39;</span><span class="p">:</span> <span class="n">pvalue</span><span class="p">})</span>
+
+
+</div>
+<div class="viewcode-block" id="test_correlation"><a class="viewcode-back" href="../../index.html#tests.tests.test_correlation">[docs]</a><span class="k">def</span> <span class="nf">test_correlation</span><span class="p">(</span><span class="n">series1</span><span class="p">,</span> <span class="n">series2</span><span class="p">,</span> <span class="n">correlation</span><span class="p">,</span> <span class="n">test_type</span> <span class="o">=</span> <span class="s">&#39;z&#39;</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Test population correlation is equal to a given value</span>
+<span class="sd">    if the correlation passed is zero, then a t-test is called</span>
+<span class="sd">    else, a z-test is called. Actually it is possible to also compute the</span>
+<span class="sd">    z-test when the hypothesised population correlation is zero.</span>
+<span class="sd">    </span>
+<span class="sd">    :param: series1, series2: the pandas series whose correlation has to be computed</span>
+<span class="sd">    </span>
+<span class="sd">    :returns: the test statistic, the p-value, the degrees of freedom, and the type of the test</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">N</span> <span class="o">=</span> <span class="n">series1</span><span class="o">.</span><span class="n">count</span><span class="p">()</span>
+    <span class="n">sample_correlation</span> <span class="o">=</span> <span class="n">series1</span><span class="o">.</span><span class="n">corr</span><span class="p">(</span><span class="n">series2</span><span class="p">)</span>
+    <span class="n">dof</span> <span class="o">=</span> <span class="bp">None</span>
+    
+    <span class="k">try</span><span class="p">:</span>
+        <span class="k">assert</span><span class="p">(</span><span class="n">series1</span><span class="o">.</span><span class="n">count</span><span class="p">()</span> <span class="o">==</span> <span class="n">series2</span><span class="o">.</span><span class="n">count</span><span class="p">())</span> 
+    <span class="k">except</span> <span class="ne">AssertionError</span><span class="p">:</span>
+        <span class="k">raise</span><span class="p">(</span><span class="n">NotEqualLengthError</span><span class="p">(</span><span class="s">&#39;The series are not of equal length.&#39;</span><span class="p">))</span> <span class="kn">from</span> <span class="bp">None</span>
+    
+    <span class="c"># change the type of the test if &#39;t&#39; and the correlation is not zero    </span>
+    <span class="k">if</span> <span class="n">test_type</span> <span class="o">==</span> <span class="s">&#39;t&#39;</span><span class="p">:</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">assert</span><span class="p">(</span><span class="n">correlation</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">AssertionError</span><span class="p">:</span> 
+            <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s">&#39;A t-test cannot be computed with a non-zero &#39;</span>
+                          <span class="s">&#39; hypothesised correlation coefficient, switching to a z-test.&#39;</span><span class="p">)</span>
+            <span class="n">test_type</span>  <span class="o">=</span> <span class="s">&#39;z&#39;</span>
+    
+    <span class="k">if</span> <span class="n">test_type</span>  <span class="o">==</span> <span class="s">&#39;z&#39;</span><span class="p">:</span>
+        <span class="c"># compute the z-test</span>
+        <span class="n">sample_mean</span> <span class="o">=</span> <span class="mf">0.5</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">((</span><span class="mi">1</span> <span class="o">+</span> <span class="n">sample_correlation</span><span class="p">)</span><span class="o">/</span><span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">sample_correlation</span><span class="p">))</span>
+        <span class="n">population_mean</span> <span class="o">=</span> <span class="mf">0.5</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">((</span><span class="mi">1</span> <span class="o">+</span> <span class="n">correlation</span><span class="p">)</span><span class="o">/</span><span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">correlation</span><span class="p">))</span>
+        <span class="n">population_std</span> <span class="o">=</span> <span class="mi">1</span><span class="o">/</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">N</span> <span class="o">-</span> <span class="mi">3</span><span class="p">)</span>
+        <span class="n">statistic</span> <span class="o">=</span> <span class="p">(</span><span class="n">sample_mean</span> <span class="o">-</span> <span class="n">population_mean</span><span class="p">)</span><span class="o">/</span><span class="n">population_std</span>
+        <span class="n">pvalue</span> <span class="o">=</span> <span class="mi">2</span><span class="o">*</span><span class="p">(</span><span class="mi">1</span><span class="o">-</span><span class="n">sps</span><span class="o">.</span><span class="n">norm</span><span class="o">.</span><span class="n">cdf</span><span class="p">(</span><span class="nb">abs</span><span class="p">(</span><span class="n">statistic</span><span class="p">)))</span>
+    <span class="k">elif</span> <span class="n">test_type</span> <span class="o">==</span> <span class="s">&#39;t&#39;</span><span class="p">:</span>
+        <span class="c"># compute the t-test</span>
+        <span class="n">statistic</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">N</span><span class="o">-</span><span class="mi">2</span><span class="p">)</span><span class="o">*</span><span class="n">sample_correlation</span><span class="o">/</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">sample_correlation</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
+        <span class="n">dof</span> <span class="o">=</span> <span class="n">N</span> <span class="o">-</span> <span class="mi">2</span>
+        <span class="n">pvalue</span> <span class="o">=</span> <span class="mi">2</span><span class="o">*</span><span class="p">(</span><span class="mi">1</span><span class="o">-</span><span class="n">sps</span><span class="o">.</span><span class="n">t</span><span class="o">.</span><span class="n">cdf</span><span class="p">(</span><span class="nb">abs</span><span class="p">(</span><span class="n">statistic</span><span class="p">),</span> <span class="n">dof</span><span class="p">))</span>
+    
+    <span class="k">return</span><span class="p">({</span><span class="s">&#39;statistic&#39;</span><span class="p">:</span> <span class="n">statistic</span><span class="p">,</span> <span class="s">&#39;p-value&#39;</span><span class="p">:</span> <span class="n">pvalue</span><span class="p">,</span> <span class="s">&#39;DoF&#39;</span><span class="p">:</span> <span class="n">dof</span><span class="p">,</span> <span class="s">&#39;test_type&#39;</span><span class="p">:</span> <span class="n">test_type</span><span class="p">})</span> 
+</div>
+<div class="viewcode-block" id="test_proportions"><a class="viewcode-back" href="../../index.html#tests.tests.test_proportions">[docs]</a><span class="k">def</span> <span class="nf">test_proportions</span><span class="p">(</span><span class="n">series1</span><span class="p">,</span> <span class="n">series2</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Test the significance of the difference between two proportions</span>
+<span class="sd">    </span>
+<span class="sd">    :param: series1, series2: pandas series from which the proportion is to be computed</span>
+<span class="sd">    </span>
+<span class="sd">    :returns: a dict with the statistic and the p-value</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">N1</span> <span class="o">=</span> <span class="n">series1</span><span class="o">.</span><span class="n">count</span><span class="p">()</span>
+    <span class="n">N2</span> <span class="o">=</span> <span class="n">series2</span><span class="o">.</span><span class="n">count</span><span class="p">()</span>
+    
+    <span class="c"># check that the length of the two series are the same</span>
+    <span class="c"># TODO this seems to go against DRY. Need to wrap it in a class which</span>
+    <span class="c">#     accepts two series and does the necessary checks that are not </span>
+    <span class="c">#     test dependent, before implementing the test</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="k">assert</span><span class="p">(</span><span class="n">N1</span> <span class="o">==</span> <span class="n">N2</span><span class="p">)</span>
+    <span class="k">except</span> <span class="ne">AssertionError</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="n">NotEqualLengthError</span> <span class="kn">from</span> <span class="bp">None</span>
+    
+    <span class="c"># TODO check that it is indeed proportion data. is this overly zealous?</span>
+    <span class="c"># TODO add handling of missing data to all of this</span>
+    
+    <span class="n">mean1</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">series1</span><span class="p">)</span>
+    <span class="n">mean2</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">series2</span><span class="p">)</span>
+    
+    <span class="n">combined_mean</span> <span class="o">=</span> <span class="p">(</span><span class="n">mean1</span><span class="o">*</span><span class="n">N1</span> <span class="o">+</span> <span class="n">mean2</span><span class="o">*</span><span class="n">N2</span><span class="p">)</span><span class="o">/</span><span class="p">(</span><span class="n">N1</span> <span class="o">+</span> <span class="n">N2</span><span class="p">)</span>
+    
+    <span class="n">statistic</span> <span class="o">=</span> <span class="p">((</span><span class="n">mean1</span> <span class="o">-</span> <span class="n">mean2</span><span class="p">)</span><span class="o">/</span>
+                 <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">((</span><span class="n">combined_mean</span><span class="o">*</span><span class="p">(</span><span class="mi">1</span><span class="o">-</span><span class="n">combined_mean</span><span class="p">)</span><span class="o">/</span><span class="p">(</span><span class="mi">1</span><span class="o">/</span><span class="n">N1</span> <span class="o">+</span> <span class="mi">1</span><span class="o">/</span><span class="n">N2</span><span class="p">))))</span>
+    <span class="n">pvalue</span> <span class="o">=</span> <span class="mi">2</span><span class="o">*</span><span class="p">(</span><span class="mi">1</span><span class="o">-</span><span class="n">sps</span><span class="o">.</span><span class="n">norm</span><span class="o">.</span><span class="n">cdf</span><span class="p">(</span><span class="nb">abs</span><span class="p">(</span><span class="n">statistic</span><span class="p">)))</span>
+    
+    <span class="k">return</span><span class="p">({</span><span class="s">&#39;statistic&#39;</span><span class="p">:</span> <span class="n">statistic</span><span class="p">,</span> <span class="s">&#39;p-value&#39;</span><span class="p">:</span> <span class="n">pvalue</span><span class="p">})</span>
+</pre></div></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+            <p class="logo"><a href="../../index.html">
+              <img class="logo" src="../../_static/fractalLogo.png" alt="Logo"/>
+            </a></p>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../index.html">PyStat Documentation</a> &raquo;</li>
+          <li><a href="../index.html" >Module code</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2014, Tirthankar Chakravarty.
+      Last updated on Jul 29, 2014.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.2.
+    </div>
+  </body>
+</html>

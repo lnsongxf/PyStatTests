@@ -1,0 +1,13 @@
+\begin{theindex}
+\def\bigletter#1{{\Large\sffamily#1}\nopagebreak\vspace{1mm}}
+
+  \bigletter T
+  \item test\_correlation() (in module tests.tests), \hyperpage{3}
+  \item test\_mean() (in module tests.tests), \hyperpage{3}
+  \item test\_means() (in module tests.tests), \hyperpage{4}
+  \item test\_proportion() (in module tests.tests), \hyperpage{4}
+  \item test\_proportions() (in module tests.tests), \hyperpage{4}
+  \item test\_variance() (in module tests.tests), \hyperpage{4}
+  \item tests.tests (module), \hyperpage{3}
+
+\end{theindex}

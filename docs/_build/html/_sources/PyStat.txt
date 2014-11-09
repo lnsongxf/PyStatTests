@@ -1,0 +1,11 @@
+PyStat package
+==============
+
+Subpackages
+-----------
+
+.. toctree::
+
+    PyStat.tests
+
+

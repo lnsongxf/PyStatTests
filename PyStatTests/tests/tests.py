@@ -23,13 +23,28 @@ import warnings
 from .error_definitions import NotEqualLengthError
 
 def test_mean(series, mean, variance = None, type = 'two-sided'):
-    """ Test that the mean of the series is equal to given number.
+    r""" Test that the mean of the series is equal to given number.
 
     :param: series: a pandas Series
     :param: mean: the hypothesised true mean of the population
     :param: variance: if supplied, the known variance of the population
     
     :returns: a dict with the statistic and the p-value
+    
+    This module implements two tests of population mean -- one where the 
+    population variance is assumed to be known, and the other where the
+    population variance is assumed to be unknown.
+    
+    ^ Test: Z-test for population mean (variance known)
+    
+    **Data:** The data is assumed to be a random (IID) sample from a normal population [#f1]_. 
+    
+    **Hypothesis**: 
+    
+    .. math::
+    
+        H_0: \mu = \mu_0 \\ 
+        H_1: \mu \neq \mu_0
     
     .. code-block:: python
         
@@ -62,6 +77,12 @@ def test_mean(series, mean, variance = None, type = 'two-sided'):
         print(tests.test_mean(series1, mean = 2, variance = 1))
         # test 7: alternative DGP
         print(tests.test_mean(series1, mean = 2))
+
+    .. rubric:: Footnotes
+    
+    .. [#f1] Note that the distribution of the statistic might be robust to other
+      kinds of populations and sampling schemes but we discuss only the cases in [kanji98]_.
+      
 
     """
     seriesMean = np.mean(series)
@@ -246,3 +267,4 @@ def test_proportions(series1, series2):
     pvalue = 2*(1-sps.norm.cdf(abs(statistic)))
     
     return({'statistic': statistic, 'p-value': pvalue})
+
